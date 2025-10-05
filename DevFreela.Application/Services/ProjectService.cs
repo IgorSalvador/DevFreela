@@ -38,8 +38,8 @@ public class ProjectService : IProjectService
             .Include(x => x.Comments)
             .SingleOrDefaultAsync(x => x.Id == id);
 
-        return project is null 
-            ? ResultViewModel<ProjectViewModel>.Error("Project not found!") 
+        return project is null
+            ? ResultViewModel<ProjectViewModel>.Error("Project not found!")
             : ResultViewModel<ProjectViewModel>.Success(ProjectViewModel.FromEntity(project));
     }
 
