@@ -8,7 +8,6 @@ public class AppDbContext : DbContext
 {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
-
     }
 
     public DbSet<User> Users { get; set; }
@@ -42,6 +41,11 @@ public class AppDbContext : DbContext
                 .WithMany(p => p.Comments)
                 .HasForeignKey(p => p.IdProject)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            x.HasOne(p => p.User)
+                .WithMany(u => u.Comments)
+                .HasForeignKey(p => p.IdUser)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         builder.Entity<User>(x =>
@@ -67,6 +71,10 @@ public class AppDbContext : DbContext
                 .WithMany(o => o.OwnedProjects)
                 .HasForeignKey(p => p.IdClient)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // Explicit precision to remove warning
+            x.Property(p => p.TotalCost)
+                .HasPrecision(18, 2);
         });
 
         base.OnModelCreating(builder);

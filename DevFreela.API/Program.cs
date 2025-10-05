@@ -6,18 +6,12 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? string.Empty;
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseInMemoryDatabase(builder.Configuration.GetConnectionString("DefaultConnection") ?? string.Empty));
+    options.UseSqlServer(connectionString));
 
 builder.Services.Configure<FreelanceTotalCostConfig>(
-    builder.Configuration.GetSection("FreelanceTotalCostConfig")
-    );
-
-builder.Services.AddScoped<IConfigService, ConfigService>();
-
-//builder.Services.AddSingleton<IConfigService, ConfigService>();
+    builder.Configuration.GetSection("FreelanceTotalCostConfig"));
 
 builder.Services.AddExceptionHandler<ApiExceptionHandler>();
 builder.Services.AddProblemDetails();
