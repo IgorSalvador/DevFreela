@@ -1,8 +1,9 @@
-﻿using DevFreela.Core.Entities;
-using DevFreela.Application.Models;
+﻿using DevFreela.Application.Commands.UserCommands.Create;
+using DevFreela.Application.Queries.UserQueries.GetById;
 using DevFreela.Infrastructure.Persistence;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using DevFreela.Application.Commands.UserCommands.CreateSkill;
 
 namespace DevFreela.API.Controllers
 {
@@ -10,59 +11,41 @@ namespace DevFreela.API.Controllers
     [Route("api/users")]
     public class UsersController : ControllerBase
     {
-        private readonly AppDbContext _context;
+        private readonly IMediator _mediator;
 
-        public UsersController(AppDbContext context)
+        public UsersController(IMediator mediator, AppDbContext context)
         {
-            _context = context;
+            _mediator = mediator;
         }
 
         [HttpGet("{id:int}")]
-        public IActionResult GetById(int id)
+        public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken = default)
         {
-            var user = _context.Users
-                .Include(x => x.Skills)
-                .ThenInclude(x => x.Skill)
-                .SingleOrDefault(x => x.Id == id);
+            var result = await _mediator.Send(new GetUserByIdQuery(id), cancellationToken);
 
-            if (user is null)
-                return NotFound();
+            if (!result.IsSuccess) return BadRequest(result.Message);
 
-            var model = UserViewModel.FromEntity(user);
-
-            return Ok(model);
+            return Ok(result);
         }
 
         [HttpPost]
-        public IActionResult Post(CreateUserInputModel model)
+        public async Task<IActionResult> Post(CreateUserCommand command, CancellationToken cancellationToken = default)
         {
-            var user = new User(model.FullName, model.Email, model.BirthDate);
+            var result = await _mediator.Send(command, cancellationToken);
 
-            _context.Users.Add(user);
-            _context.SaveChanges();
+            if (!result.IsSuccess) return BadRequest(result.Message);
 
-            return Ok();
+            return CreatedAtAction(nameof(GetById), new { id = result.Data }, command);
         }
 
-        [HttpPost("{id:int}/skills")]
-        public IActionResult PostSkill(int id, UserSkillsInputModel model)
+        [HttpPost("/skills")]
+        public async Task<IActionResult> PostSkill( CreateUserSkillCommand command, CancellationToken cancellationToken = default)
         {
-            var usersSkills = model.Skills.Select(s => new UserSkill(id, s)).ToList();
+            var result = await _mediator.Send(command, cancellationToken);
 
-            _context.UserSkills.AddRange(usersSkills);
-            _context.SaveChanges();
+            if (!result.IsSuccess) return BadRequest(result.Message);
 
             return NoContent();
-        }
-
-        [HttpPut("{id:int}/profile-picture")]
-        public IActionResult PostProfilePicture(int id, IFormFile file)
-        {
-            var description = $"File: {file.FileName}, Size: {file.Length}";
-
-            // Process image
-
-            return Ok(description);
         }
     }
 }

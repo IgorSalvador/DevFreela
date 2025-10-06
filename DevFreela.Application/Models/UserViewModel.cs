@@ -18,12 +18,10 @@ public class UserViewModel
     }
 
     public static UserViewModel FromEntity(User user)
-    {
-        return new UserViewModel(
+        => new(
             user.FullName,
             user.Email,
             user.BirthDate,
             user.Skills.Select(x => x.Skill.Description).ToList()
         );
-    }
 }
