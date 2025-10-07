@@ -1,18 +1,18 @@
 ﻿using DevFreela.Application.Models;
 using DevFreela.Application.Notification.ProjectNotifications.ProjectCreated;
-using DevFreela.Infrastructure.Persistence;
+using DevFreela.Core.Repositories;
 using MediatR;
 
 namespace DevFreela.Application.Commands.ProjectCommands.Create;
 
 public class CreateProjectHandler : IRequestHandler<CreateProjectCommand, ResultViewModel<int>>
 {
-    private readonly AppDbContext _context;
+    private readonly IProjectRepository _repository;
     private readonly IMediator _mediator;
 
-    public CreateProjectHandler(AppDbContext context, IMediator mediator)
+    public CreateProjectHandler(IProjectRepository repository, IMediator mediator)
     {
-        _context = context;
+        _repository = repository;
         _mediator = mediator;
     }
 
@@ -20,8 +20,7 @@ public class CreateProjectHandler : IRequestHandler<CreateProjectCommand, Result
     {
         var project = request.ToEntity();
 
-        await _context.Projects.AddAsync(project, cancellationToken);
-        await _context.SaveChangesAsync(cancellationToken);
+        await _repository.Create(project, cancellationToken);
 
         var projectCreated = new ProjectCreatedNotification(project.Id, project.Title, project.TotalCost);
 

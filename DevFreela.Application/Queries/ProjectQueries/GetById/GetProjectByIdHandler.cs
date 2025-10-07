@@ -1,26 +1,21 @@
 ﻿using DevFreela.Application.Models;
-using DevFreela.Infrastructure.Persistence;
+using DevFreela.Core.Repositories;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace DevFreela.Application.Queries.ProjectQueries.GetById;
 
 public class GetProjectByIdHandler : IRequestHandler<GetProjectByIdQuery, ResultViewModel<ProjectViewModel>>
 {
-    private readonly AppDbContext _context;
+    private readonly IProjectRepository _repository;
 
-    public GetProjectByIdHandler(AppDbContext context)
+    public GetProjectByIdHandler(IProjectRepository repository)
     {
-        _context = context;
+        _repository = repository;
     }
 
     public async Task<ResultViewModel<ProjectViewModel>> Handle(GetProjectByIdQuery request, CancellationToken cancellationToken)
     {
-        var project = await _context.Projects
-            .Include(x => x.Client)
-            .Include(x => x.Freelancer)
-            .Include(x => x.Comments)
-            .SingleOrDefaultAsync(x => x.Id == request.Id, cancellationToken);
+        var project = await _repository.GetDetailsById(request.Id, cancellationToken);
 
         return project is null
             ? ResultViewModel<ProjectViewModel>.Error("Project not found!")

@@ -1,30 +1,21 @@
-﻿using Azure;
-using DevFreela.Application.Models;
-using DevFreela.Infrastructure.Persistence;
+﻿using DevFreela.Application.Models;
+using DevFreela.Core.Repositories;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace DevFreela.Application.Queries.ProjectQueries.Get;
 
 public class GetProjectsHandler : IRequestHandler<GetProjectsQuery, ResultViewModel<List<ProjectItemViewModel>>>
 {
-    private readonly AppDbContext _context;
+    private readonly IProjectRepository _repository;
 
-    public GetProjectsHandler(AppDbContext context)
+    public GetProjectsHandler(IProjectRepository repository)
     {
-        _context = context;
+        _repository = repository;
     }
 
     public async Task<ResultViewModel<List<ProjectItemViewModel>>> Handle(GetProjectsQuery request, CancellationToken cancellationToken)
     {
-        var projects = await _context.Projects
-            .Include(x => x.Client)
-            .Include(x => x.Freelancer)
-            .Where(x => !x.IsDeleted &&
-                        (request.Search == string.Empty || x.Title.Contains(request.Search) || x.Description.Contains(request.Search)))
-            .Skip((request.Page - 1) * request.PageSize)
-            .Take(request.PageSize)
-            .ToListAsync(cancellationToken);
+        var projects = await _repository.GetAll(request.Search, request.Page, request.PageSize, cancellationToken);
 
         var model = projects.Select(ProjectItemViewModel.FromEntity).ToList();
 
